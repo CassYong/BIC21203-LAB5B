@@ -55,11 +55,54 @@
             font-size: 16px;
             color: #777;
         }
+
+        .delete-link {
+            text-decoration: none;
+            color: #FF0000;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .delete-link:hover {
+            color: #b30000;
+        }
     </style>
 </head>
 
 <body>
     <h1>Users List</h1>
+
+    <?php
+    // Handle deletion
+    if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['delete_matric'])) {
+        $matricToDelete = $_POST['delete_matric'];
+
+        $servername = "localhost";
+        $username = "root";
+        $password = "";
+        $dbname = "lab_5b";
+
+        $conn = new mysqli($servername, $username, $password, $dbname);
+
+        if ($conn->connect_error) {
+            die("Connection failed: " . $conn->connect_error);
+        }
+
+        $sql = "DELETE FROM users WHERE matric = ?";
+        $stmt = $conn->prepare($sql);
+        $stmt->bind_param("s", $matricToDelete);
+
+        if ($stmt->execute()) {
+            echo "<p style='text-align:center;color:green;'>User with Matric No: $matricToDelete deleted successfully.</p>";
+        } else {
+            echo "<p style='text-align:center;color:red;'>Error deleting user: " . $stmt->error . "</p>";
+        }
+
+        $stmt->close();
+        $conn->close();
+    }
+    ?>
+
     <table>
         <tr>
             <th>Matric</th>
@@ -90,7 +133,12 @@
                 echo "<td>" . htmlspecialchars($row["name"]) . "</td>";
                 echo "<td>" . htmlspecialchars($row["role"]) . "</td>";
                 echo "<td><a href='update.php?matric=" . urlencode($row["matric"]) . "'>Update</a></td>";
-                echo "<td><a href='delete_user.php?matric=" . urlencode($row["matric"]) . "'>Delete</a></td>";
+                echo "<td>
+                        <form method='post' style='display:inline;' onsubmit='return confirm(\"Are you sure you want to delete this user?\");'>
+                            <input type='hidden' name='delete_matric' value='" . htmlspecialchars($row["matric"]) . "'>
+                            <a class='delete-link' onclick='this.closest(\"form\").submit(); return false;'>Delete</a>
+                        </form>
+                      </td>";
                 echo "</tr>";
             }
         } else {
